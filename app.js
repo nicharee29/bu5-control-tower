@@ -128,16 +128,11 @@ i.dataset.rk=key; i.dataset.f=field; i.addEventListener('change',()=>refreshDeri
 }
 function refreshDerived(tr){
 if(!tr||tr.children.length<17) return;
-const shift=tr.children[2].textContent.trim();
 const ins=tr.querySelectorAll('input.time-input');
-const sm=/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/.exec(shift);
-const st=sm?toMin(sm[1]):null, a=toMin(ins[0].value), b=toMin(ins[1].value);
-const c14=tr.children[14], c15=tr.children[15];
-c14.textContent='';
-if(a===null) c14.appendChild(el('span','chip neutral','-'));
-else if(st===null) c14.appendChild(el('span','chip neutral','ไม่ทราบกะ'));
-else { let d=a-st; if(d>720)d-=1440; if(d<-720)d+=1440;
-c14.appendChild(d>0?el('span','chip warn','สาย '+fmtMin(d)):el('span','chip good','ตรงเวลา')); }
+const a=toMin(ins[0].value), b=toMin(ins[1].value);
+/* ช่อง "มาตรงเวลา" (children[14]) เป็นช่องเลือกเอง ห้ามเขียนทับ
+   เหลือคำนวณอัตโนมัติแค่ รวมเวลา / เกิน Std */
+const c15=tr.children[15];
 if(a===null||b===null) c15.textContent='-';
 else { let t=b-a; if(t<=0)t+=1440; const ov=t-720;
 c15.textContent=fmtMin(t)+(ov>0?'  (+'+fmtMin(ov)+')':'  (-)'); c15.style.color=ov>0?'var(--warn)':''; }
@@ -218,6 +213,8 @@ host.appendChild(w);
 const CAR_OPTS = ['พร้อม','ไม่พร้อม','AD'];
 const CAR_TONE = {'พร้อม':'good','ไม่พร้อม':'crit','AD':'crit'};
 const DRV_OPTS = ['พร้อม','ลา','ขาดงาน'];
+const ONTIME_OPTS=['ตรงเวลา','สาย','มาก่อนเวลา'];
+const ONTIME_TONE={'ตรงเวลา':'good','มาก่อนเวลา':'good','สาย':'warn'};
 const DRV_TONE = {'พร้อม':'good','ลา':'purple','ขาดงาน':'crit','ขาด':'crit','OFF':'neutral'};
 // ชื่อวันที่ยอมรับได้ในช่อง "วันหยุด" เรียงตาม getDay() 0=อาทิตย์
 const DAY_ALIASES = [
@@ -288,7 +285,7 @@ tr.appendChild(textTd(r.key,'actOut',r.actOut,'จริง-ขาไป'));
 tr.appendChild(textTd(r.key,'actBack',r.actBack,'จริง-ขากลับ'));
 tr.appendChild(timeTd(r.key,'in',r['in']));
 tr.appendChild(timeTd(r.key,'out',r.out));
-tr.appendChild(el('td'));           // มาตรงเวลา (คำนวณ)
+tr.appendChild(rosterSelectTd(r,'onTime',ONTIME_OPTS,ONTIME_TONE));  // มาตรงเวลา (กรอกเอง)
 tr.appendChild(el('td','num'));     // รวมเวลา (คำนวณ)
 tr.appendChild(textTd(r.key,'note',r.note,'สาเหตุ / หมายเหตุ','note-cell'));
 for(let i=0;i<7;i++) tr.appendChild(tickBtn(r.key,i,(r.b||[])[i]));
