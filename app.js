@@ -11,7 +11,8 @@ const USERS = [
 let currentUser = USERS[0];
 const canUpload = () => UPLOAD_ALLOWED.indexOf(currentUser.id) >= 0;
 const CS_FIELDS = [['date','วันที่'],['customer','ลูกค้า'],['from','ต้นทาง'],['to','ปลายทาง'],
-['booking','Booking / BL'],['size','Size'],['due','กำหนดส่ง / Closing']];
+['booking','Booking / BL'],['contNo','Cont. No'],['seal','Seal'],['size','Size'],
+['loadDate','Loading Date'],['due','กำหนดส่ง / Closing'],['returnPort','Return Port']];
 const CC_FIELDS = [['detail','เลขตู้ / รายละเอียด'],['truck','เบอร์รถ'],['driver','พจส.'],
 ['phone','เบอร์โทร'],['finished','วันที่เวลาจบงาน'],['gps','สถานะรถ (GPS)']];
 const SUBMITTED = 'ส่งให้ CC แล้ว';
@@ -523,7 +524,7 @@ return t===want;
 });
 }
 const TPL_MARK = '#BU5-TEMPLATE';
-const TPL_VERSION = 'v1';
+const TPL_VERSION = 'v2';
 const TPL_SALT = 'BU5-CONTROL-TOWER';
 const TPL_ROWS = 30;                    // แถวว่างให้กรอกในเทมเพลต
 const tplHeaders = () => ['เลขที่ใบงาน'].concat(CS_FIELDS.map(f => f[1]));
