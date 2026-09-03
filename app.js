@@ -44,25 +44,41 @@ function pwGet(){ try{ return localStorage.getItem(PW_KEY) || ''; }catch(e){ ret
 function pwSet(v){ try{ v ? localStorage.setItem(PW_KEY, v) : localStorage.removeItem(PW_KEY); }catch(e){} }
 function signOut(){ pwSet(''); location.reload(); }
 
-function pwAsk(note){
-return new Promise(resolve=>{
-const old = $('#pw-ov'); if(old) old.remove();
+function pwClose(){ const o=$('#pw-ov'); if(o) o.remove(); }
+function pwNote(msg){ const n=$('#pw-note'); if(!n) return; n.textContent=msg||''; n.classList.toggle('show',!!msg); }
+function pwBusy(on){
+const b=$('#pw-go'), i=$('#pw-in');
+if(b){ b.disabled=on; b.textContent = on ? 'กำลังตรวจสอบ...' : 'เข้าใช้งาน'; }
+if(i) i.disabled=on;
+}
+function pwBuild(){
 const ov = el('div','pw-ov'); ov.id='pw-ov';
 const box = el('div','pw-box');
 box.appendChild(Object.assign(el('div','pw-ic'),{textContent:'🚚'}));
 box.appendChild(Object.assign(el('h2','pw-t'),{textContent:'BU5 Control Tower'}));
 box.appendChild(Object.assign(el('p','pw-s'),{textContent:'ใส่รหัสของทีมเพื่อเข้าใช้งาน'}));
-const nt = el('div','pw-note'); nt.id='pw-note';
-if(note){ nt.textContent = note; nt.classList.add('show'); }
-box.appendChild(nt);
+const nt = el('div','pw-note'); nt.id='pw-note'; box.appendChild(nt);
 const inp = el('input','pw-in'); inp.type='password'; inp.id='pw-in';
-inp.placeholder='รหัสของทีม'; inp.autocomplete='current-password';
-box.appendChild(inp);
-const go = el('button','btn pw-go'); go.type='button'; go.textContent='เข้าใช้งาน';
-box.appendChild(go);
+inp.placeholder='รหัสของทีม'; inp.autocomplete='current-password'; box.appendChild(inp);
+const go = el('button','btn pw-go'); go.type='button'; go.id='pw-go'; go.textContent='เข้าใช้งาน'; box.appendChild(go);
 box.appendChild(Object.assign(el('div','pw-hint'),{textContent:'ขอรหัสจากหัวหน้างาน — ใส่ครั้งเดียว เบราว์เซอร์จะจำไว้'}));
 ov.appendChild(box); document.body.appendChild(ov);
-const submit=()=>{ const v=inp.value.trim(); if(!v){ inp.focus(); return; } ov.remove(); resolve(v); };
+return ov;
+}
+
+/* ค้างหน้าใส่รหัสไว้จนเซิร์ฟเวอร์ตอบ ไม่ปิดก่อนรู้ผล */
+function pwAsk(note){
+return new Promise(resolve=>{
+if(!$('#pw-ov')) pwBuild();
+pwBusy(false); pwNote(note);
+const inp=$('#pw-in'), go=$('#pw-go');
+inp.value='';
+const submit=()=>{
+const v=inp.value.trim();
+if(!v){ inp.focus(); return; }
+pwNote(''); pwBusy(true);
+resolve(v);
+};
 go.onclick=submit;
 inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); submit(); } };
 setTimeout(()=>inp.focus(),60);
@@ -73,14 +89,21 @@ async function apiPost(payload){
 let pw = pwGet(), note = '';
 for(let i=0;i<8;i++){
 if(!pw){ pw = await pwAsk(note); note=''; }
+let j;
+try{
 const r = await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
 body:JSON.stringify(Object.assign({pw:pw},payload)),redirect:'follow'});
 const txt = await r.text();
-let j; try{ j=JSON.parse(txt); }catch(e){
+try{ j=JSON.parse(txt); }catch(e){
 throw new Error('Apps Script ไม่ได้ส่ง JSON กลับมา — ตรวจว่า Deploy เป็น New version และ Who has access = Anyone');
 }
-if(j.ok){ pwSet(pw); return j; }
+}catch(err){
+if($('#pw-ov')){ pwBusy(false); pwNote('ต่อเซิร์ฟเวอร์ไม่ได้: '+err.message); }
+throw err;
+}
+if(j.ok){ pwSet(pw); pwClose(); return j; }
 if(j.code==='AUTH'){ pwSet(''); pw=''; note='รหัสไม่ถูกต้อง ลองอีกครั้ง'; continue; }
+if($('#pw-ov')){ pwBusy(false); pwNote(j.error||'เกิดข้อผิดพลาด'); }
 throw new Error(j.error||'unknown');
 }
 throw new Error('ใส่รหัสไม่ถูกต้องหลายครั้ง กรุณาโหลดหน้าใหม่');

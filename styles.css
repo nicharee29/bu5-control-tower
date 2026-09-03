@@ -238,3 +238,5 @@ table.plain td.sticky2 .status-select{min-width:112px}
 .pw-in:focus{outline:none;border-color:var(--accent);background:var(--surface)}
 .pw-go{width:100%;justify-content:center;margin-top:12px;padding:11px 16px;font-size:13px}
 .pw-hint{font-size:10.5px;color:var(--text-muted);line-height:1.6;margin-top:14px}
+.pw-in:disabled{opacity:.6}
+.pw-go:disabled{opacity:.7;cursor:progress}
