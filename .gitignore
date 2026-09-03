@@ -1,0 +1,18 @@
+# ไฟล์ทำงานบนเครื่อง ไม่ต้องขึ้น repo
+single.html
+commercial.html
+artifact-preview.html
+web/
+.vercel/
+.vercelignore
+
+# สคริปต์ deploy แบบเดิม (เลิกใช้เมื่อผูก GitHub แล้ว)
+DEPLOY.bat
+DELETE-OLD.bat
+deploy-api.js
+delete-api.js
+
+# ไฟล์สำรอง
+*.bak
+*.b2
+*.b3

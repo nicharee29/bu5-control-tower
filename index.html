@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BU5 Control Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell" id="app-root">
+<nav class="topnav" id="topnav">
+<div class="brand"><div class="brand-mark">🚚</div>
+<div><div class="brand-name">BU5 Control Tower</div><div class="brand-sub">EV Logistics</div></div>
+</div>
+<button class="nav-btn active" data-page="overview" data-label="ภาพรวมวันนี้"><span class="nav-ic">📊</span>ภาพรวมวันนี้</button>
+<button class="nav-btn" data-page="upload" data-label="อัปโหลดคำสั่งงาน (CS)"><span class="nav-ic">📤</span><span class="nav-step">1</span>อัปโหลดคำสั่งงาน</button>
+<button class="nav-btn" data-page="summary" data-label="สรุปปริมาณงาน (Planner)"><span class="nav-ic">📈</span><span class="nav-step">2</span>สรุปปริมาณงาน</button>
+<button class="nav-btn" data-page="dispatch" data-label="ติดตามสถานะพจส.รายคน"><span class="nav-ic">👷</span><span class="nav-step">3</span>ติดตามสถานะพจส.รายคน</button>
+<button class="nav-btn" data-page="tracking" data-label="ติดตามงาน (CC)"><span class="nav-ic">🚚</span><span class="nav-step">4</span>ติดตามงาน (CC)</button>
+<button class="nav-btn" data-page="billing" data-label="ติดตามเอกสารวางบิล"><span class="nav-ic">🧾</span><span class="nav-step">5</span>ติดตามวางบิล</button>
+</nav>
+<main class="main">
+<div class="topbar">
+<div class="crumb">BU5 Control Tower / <b id="crumb">ภาพรวมวันนี้</b></div>
+<div class="topbar-right">
+<button class="theme-toggle" onclick="toggleTheme()"><span id="theme-icon">☀️</span><span id="theme-label">กลางวัน</span></button>
+<span class="status-pill busy" id="conn"><span class="dot"></span>กำลังเชื่อมต่อ...</span>
+<button class="icon-btn" id="reload-btn" title="โหลดข้อมูลจาก Google Sheet ใหม่" onclick="reloadState(this)">⟳</button>
+<div class="clock-wrap"><div class="clock num" id="clock">--:--:--</div><div class="clock-date" id="clock-date">—</div></div>
+<div class="user-chip"><div class="user-avatar" id="user-avatar">น</div>
+<div><select id="user-select" onchange="selectUser(this.value)"></select><div class="u-role" id="user-role">—</div></div>
+</div>
+</div>
+</div>
+<!-- ============ 0 OVERVIEW ============ -->
+<section class="page active" id="page-overview">
+<div class="head"><span class="head-ic" style="--hi:var(--c-blue)">📊</span><div><h1 class="head-title">ภาพรวมวันนี้</h1><p class="head-sub">สรุปสถานะงานขนส่งทั้งระบบ BU5 — สำหรับรายงานผู้บริหาร</p></div></div>
+<div class="exec-brief" id="exec-brief"></div>
+<div class="ov-main">
+<div class="exec-panel" style="--accent-panel:var(--c-blue);margin-bottom:0">
+<div class="exec-panel-head"><span class="exec-num">1</span><h2 class="exec-panel-title">ปริมาณงานวันนี้</h2><span class="exec-panel-insight" id="ins1"></span></div>
+<div class="kpi-grid-fit" id="ov-kpi1"></div>
+<div class="grid-2" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)">
+<div class="card"><div class="card-head"><h3 class="card-title">🏭 เที่ยวงานวันนี้แบ่งตามลูกค้า</h3><span class="card-hint">จัดรถแล้ว / ต้องจัด</span></div><div id="ov-cust"></div></div>
+<div class="card"><div class="card-head"><h3 class="card-title">📦 ออเดอร์แบ่งตามประเภทงาน</h3></div><div id="ov-type"></div></div>
+</div>
+</div>
+<aside class="ov-side">
+<div class="card" style="padding:16px 17px 17px">
+<div class="card-head" style="margin-bottom:12px"><h3 class="card-title" style="font-size:13.5px">📊 สรุปงานวันนี้</h3></div>
+<div class="donut-wrap" id="ov-donut"></div>
+</div>
+<div class="eco-card">
+<div class="eco-head"><span>🌿</span><span>ร่วมขับเคลื่อนการขนส่งยั่งยืน</span></div>
+<div class="eco-sub" id="eco-sub">ลดการใช้พลังงาน สู่อนาคตที่สะอาดกว่า</div>
+</div>
+</aside>
+</div>
+<div class="exec-panel" style="--accent-panel:var(--c-orange);margin-top:18px">
+<div class="exec-panel-head"><span class="exec-num">2</span><h2 class="exec-panel-title">Tracking · งานที่ต้องติดตาม</h2><button class="pill-link" onclick="goPage('tracking')">ดูรายละเอียดทั้งหมด →</button></div>
+<div class="exec-panel-insight" id="ins2" style="margin:-8px 0 12px"></div>
+<div class="kpi-grid-fit" id="ov-kpi2"></div>
+<div class="grid-2">
+<div class="card"><div class="card-head"><h3 class="card-title">🗂️ แบ่งตามประเภทงาน</h3></div><div id="ov-trisk"></div></div>
+<div class="card"><div class="card-head"><h3 class="card-title">🏢 แบ่งตามลูกค้า</h3></div><div id="ov-crisk"></div></div>
+</div>
+</div>
+<div class="exec-panel" style="--accent-panel:var(--c-purple)">
+<div class="exec-panel-head"><span class="exec-num">3</span><h2 class="exec-panel-title">ติดตามเอกสารวางบิล</h2><span class="exec-panel-insight" id="ins3"></span></div>
+<div class="kpi-grid-fit" id="ov-kpi3"></div>
+<div class="card"><div class="card-head"><h3 class="card-title">🚨 ต้องติดตามเร่งด่วน</h3></div><div id="ov-bill"></div></div>
+</div>
+<div class="section-label"><span>📝 ประวัติการบันทึกล่าสุด (Audit Log)</span><span class="line"></span></div>
+<div class="card"><div class="card-head"><h3 class="card-title">📝 ผู้บันทึก / แก้ไขข้อมูลล่าสุด</h3><span class="card-hint">ดึงจากชีท Audit_Log</span></div>
+<div class="tbl-wrap"><table class="plain"><thead><tr><th>วันที่ / เวลา</th><th>รหัสผู้ใช้งาน</th><th>ชื่อผู้ใช้งาน</th><th>บทบาท</th><th>ข้อมูลที่บันทึก / แก้ไข</th></tr></thead><tbody id="audit-body"></tbody></table></div>
+</div>
+</section>
+<!-- ============ 1 UPLOAD ============ -->
+<section class="page" id="page-upload">
+<div class="head"><span class="head-ic" style="--hi:var(--c-teal)">📤</span><div><h1 class="head-title">อัปโหลดคำสั่งงานลูกค้า</h1><p class="head-sub">แผนก CS นำเข้าออเดอร์ลูกค้า แยกตามประเภทงาน 3 กลุ่ม</p></div></div>
+<div id="upload-perm"></div>
+<div class="upload-grid" id="upload-grid"></div>
+<div class="section-label"><span>📋 คำสั่งงานที่อัปโหลด — CS ตรวจสอบก่อนส่งให้ CC</span><span class="line"></span></div>
+<div class="tab-bar" id="cs-tabs"></div>
+<div class="subtab active" id="u-export"></div>
+<div class="subtab" id="u-import"></div>
+<div class="subtab" id="u-other"></div>
+<div class="section-label"><span>📁 ประวัติการรับไฟล์</span><span class="line"></span></div>
+<div class="card"><div class="tbl-wrap"><table class="plain"><thead><tr><th>เวลา</th><th>ชื่อไฟล์</th><th>ประเภท</th><th>ขนาด</th><th>ผู้ดำเนินการ</th><th>สถานะ</th></tr></thead><tbody id="upload-body"></tbody></table></div></div>
+</section>
+<!-- ============ 2 SUMMARY ============ -->
+<section class="page" id="page-summary">
+<div class="head"><span class="head-ic" style="--hi:var(--c-purple)">📈</span><div><h1 class="head-title">สรุปปริมาณงาน (Planner)</h1><p class="head-sub">ปริมาณงานรายลูกค้า/เส้นทาง และจำนวนเที่ยวที่ต้องจัดรถ</p></div></div>
+<div class="filter-bar"><input type="date" id="sum-date"><select id="sum-type"><option>ประเภทงาน: ทั้งหมด</option><option>Export</option><option>Import</option><option>งานอื่นๆ</option></select></div>
+<div class="kpi-grid" id="sum-kpi"></div>
+<div class="section-label"><span>🗺️ สรุปรายลูกค้า × เส้นทาง</span><span class="line"></span></div>
+<div class="card"><div class="tbl-wrap"><table class="plain"><thead><tr><th>ลูกค้า</th><th>เส้นทาง</th><th>ประเภท</th><th>ออเดอร์</th><th>เที่ยวที่ต้องจัด</th><th>ความคืบหน้า</th><th>คงเหลือ</th><th>สถานะ</th></tr></thead><tbody id="sum-body"></tbody></table></div></div>
+</section>
+<!-- ============ 3 DISPATCH (roster from Google Sheet) ============ -->
+<section class="page" id="page-dispatch">
+<div class="dispatch-top">
+<div class="head"><span class="head-ic" style="--hi:var(--good)">👷</span><div><h1 class="head-title">ติดตามสถานะพจส.รายคน</h1><p class="head-sub" id="roster-src">ตารางกะดึงจาก Google Sheet</p></div></div>
+<div class="kpi-grid-fit row1" id="ros-kpi"></div>
+<div class="roster-toolbar">
+<div class="ros-filters">
+<div class="ros-box"><span class="ros-box-lb">ช่วงกะ</span><div class="band-grp" id="ros-band" role="group" aria-label="เลือกช่วงกะ"></div></div>
+<div class="ros-box"><span class="ros-box-lb">กะ</span><select class="ros-sel" id="ros-shift" aria-label="กรองตามกะ"></select></div>
+</div>
+<button class="row-add-btn" onclick="addDriverRow()">+ เพิ่มพจส.</button>
+</div>
+<div class="ros-status" id="ros-status"></div>
+<div class="save-bar"><span class="note">กดบันทึกเมื่อแก้แผนงาน/เวลา/ผลตรวจพฤติกรรม — ระบบบันทึกลง Google Sheet พร้อมชื่อผู้บันทึก</span>
+<button class="btn" onclick="save('อัปเดตแผนงาน เวลา และผลตรวจพฤติกรรม พจส.')">บันทึกการเปลี่ยนแปลง</button></div>
+</div>
+<div class="dispatch-table-card"><div class="tbl-wrap">
+<table class="plain wide" id="roster-table">
+<thead>
+<tr class="grp"><th colspan="8">👷 ข้อมูลพจส. &amp; ตารางกะ (จาก Sheet)</th><th colspan="2">📋 แผนงานวันนี้ (Planner)</th><th colspan="2">📊 ผลจริง</th><th colspan="5">⏰ บันทึกเวลา (CC)</th><th colspan="7">🛡️ ตรวจสอบพฤติกรรม (CC)</th><th>⚙️ จัดการ</th></tr>
+<tr>
+<th class="sticky1">เบอร์รถ</th><th class="sticky2">ความพร้อมรถหลัก</th><th class="rfz3">กะ</th><th class="rfz4">พจส.</th><th class="rfz5">เบอร์โทร/วิทยุ</th><th class="rfz6">วันหยุด</th><th class="rfz7">งานหลัก</th><th>ความพร้อมพจส.</th>
+<th>ขาไป</th><th>ขากลับ</th><th>ขาไป</th><th>ขากลับ</th>
+<th>เวลาเข้างาน</th><th>เวลาคืนรถ</th><th>มาตรงเวลา?</th><th>รวมเวลา / เกิน Std</th><th>หมายเหตุ / สาเหตุ</th>
+<th>0%Acl</th><th>ชุดพนักงาน</th><th>ความเร็วไม่เกิน 65</th><th>ไม่จอดไหล่ทาง</th><th>ไม่จอดนอนกลางทาง</th><th>Complain</th><th>AD</th><th>-</th>
+</tr>
+</thead>
+<tbody id="roster-body"></tbody>
+</table>
+</div></div>
+</section>
+<!-- ============ 4 TRACKING ============ -->
+<section class="page" id="page-tracking">
+<div class="cc-top">
+<div class="head"><span class="head-ic" style="--hi:var(--c-orange)">🚚</span><div><h1 class="head-title">ติดตามงานประจำวัน (CC)</h1></div></div>
+<div class="date-filter">
+<div class="date-mode"><button class="dm-btn active" data-mode="day" onclick="setDateMode('day',this)">รายวัน</button><button class="dm-btn" data-mode="range" onclick="setDateMode('range',this)">ช่วงวันที่</button><button class="dm-btn" data-mode="month" onclick="setDateMode('month',this)">รายเดือน</button></div>
+<div class="date-inputs">
+<input type="date" data-role="date-day"><input type="date" data-role="date-from" style="display:none"><span data-role="date-range-sep" style="display:none">ถึง</span><input type="date" data-role="date-to" style="display:none"><input type="month" data-role="date-month" style="display:none">
+</div>
+<button class="btn" onclick="applyDateFilter(this)">แสดงผล</button>
+</div>
+<div class="kpi-grid-fit" id="cc-kpi"></div>
+<div class="tab-bar" id="cc-tabs"></div>
+</div>
+<div class="subtab active" id="t-export"></div>
+<div class="subtab" id="t-import"></div>
+<div class="subtab" id="t-other"></div>
+</section>
+<!-- ============ 5 BILLING ============ -->
+<section class="page" id="page-billing">
+<div class="head"><span class="head-ic" style="--hi:var(--crit)">🧾</span><div><h1 class="head-title">ติดตามเอกสารวางบิล</h1><p class="head-sub">สถานะเอกสารวางบิลลูกค้า BU5 ทุกประเภทงาน</p></div></div>
+<div class="kpi-grid" id="bill-kpi"></div>
+<div class="save-bar"><span class="note">กดบันทึกเมื่ออัปเดตสถานะเอกสารวางบิล</span><button class="btn" onclick="save('อัปเดตสถานะเอกสารวางบิลลูกค้า')">บันทึกการเปลี่ยนแปลง</button></div>
+<div class="card"><div class="tbl-wrap"><table class="plain"><thead><tr><th>ลูกค้า</th><th>ประเภทงาน</th><th>เลขที่ใบงาน</th><th>วันที่เสร็จงาน</th><th>สถานะเอกสาร</th><th>ครบกำหนดวางบิล</th><th>ขาดเอกสารอะไร / หมายเหตุ</th></tr></thead><tbody id="bill-body"></tbody></table></div></div>
+</section>
+<footer class="pagefoot">Control Tower BU5 · ตารางกะและข้อมูลที่บันทึกทั้งหมดอยู่ใน Google Sheet — แก้ที่ชีทได้โดยตรง</footer>
+</main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
