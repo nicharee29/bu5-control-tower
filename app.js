@@ -38,23 +38,56 @@ const fmtMin = m => { const s=Math.abs(m); return (m<0?'-':'')+String(Math.floor
 function setConn(kind,txt){ const c=$('#conn'); c.className='status-pill '+kind; c.innerHTML=''; c.appendChild(el('span','dot')); c.appendChild(document.createTextNode(txt)); }
 function showToast(m){ let t=$('#toast'); if(!t){ t=el('div','toast'); t.id='toast'; document.body.appendChild(t);} t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3600); }
 function formatNow(){ const d=new Date(),p=n=>String(n).padStart(2,'0'); return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes()); }
-async function apiLoad(){
-const r = await fetch(API_URL+'?action=loadState',{redirect:'follow'});
+/* ---- รหัสร่วมของทีม: เก็บในเบราว์เซอร์ของแต่ละคน ไม่อยู่ในโค้ด ---- */
+const PW_KEY = 'bu5_team_pw';
+function pwGet(){ try{ return localStorage.getItem(PW_KEY) || ''; }catch(e){ return ''; } }
+function pwSet(v){ try{ v ? localStorage.setItem(PW_KEY, v) : localStorage.removeItem(PW_KEY); }catch(e){} }
+function signOut(){ pwSet(''); location.reload(); }
+
+function pwAsk(note){
+return new Promise(resolve=>{
+const old = $('#pw-ov'); if(old) old.remove();
+const ov = el('div','pw-ov'); ov.id='pw-ov';
+const box = el('div','pw-box');
+box.appendChild(Object.assign(el('div','pw-ic'),{textContent:'🚚'}));
+box.appendChild(Object.assign(el('h2','pw-t'),{textContent:'BU5 Control Tower'}));
+box.appendChild(Object.assign(el('p','pw-s'),{textContent:'ใส่รหัสของทีมเพื่อเข้าใช้งาน'}));
+const nt = el('div','pw-note'); nt.id='pw-note';
+if(note){ nt.textContent = note; nt.classList.add('show'); }
+box.appendChild(nt);
+const inp = el('input','pw-in'); inp.type='password'; inp.id='pw-in';
+inp.placeholder='รหัสของทีม'; inp.autocomplete='current-password';
+box.appendChild(inp);
+const go = el('button','btn pw-go'); go.type='button'; go.textContent='เข้าใช้งาน';
+box.appendChild(go);
+box.appendChild(Object.assign(el('div','pw-hint'),{textContent:'ขอรหัสจากหัวหน้างาน — ใส่ครั้งเดียว เบราว์เซอร์จะจำไว้'}));
+ov.appendChild(box); document.body.appendChild(ov);
+const submit=()=>{ const v=inp.value.trim(); if(!v){ inp.focus(); return; } ov.remove(); resolve(v); };
+go.onclick=submit;
+inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); submit(); } };
+setTimeout(()=>inp.focus(),60);
+});
+}
+
+async function apiPost(payload){
+let pw = pwGet(), note = '';
+for(let i=0;i<8;i++){
+if(!pw){ pw = await pwAsk(note); note=''; }
+const r = await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+body:JSON.stringify(Object.assign({pw:pw},payload)),redirect:'follow'});
 const txt = await r.text();
 let j; try{ j=JSON.parse(txt); }catch(e){
 throw new Error('Apps Script ไม่ได้ส่ง JSON กลับมา — ตรวจว่า Deploy เป็น New version และ Who has access = Anyone');
 }
-if(!j.ok) throw new Error(j.error||'unknown');
-return j.state;
+if(j.ok){ pwSet(pw); return j; }
+if(j.code==='AUTH'){ pwSet(''); pw=''; note='รหัสไม่ถูกต้อง ลองอีกครั้ง'; continue; }
+throw new Error(j.error||'unknown');
 }
-async function apiSave(desc){
-const r = await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-body:JSON.stringify({action:'saveState',state:STATE,user:currentUser,description:desc}),redirect:'follow'});
-const txt = await r.text();
-let j; try{ j=JSON.parse(txt); }catch(e){ throw new Error('บันทึกไม่สำเร็จ: เซิร์ฟเวอร์ไม่ได้ส่ง JSON'); }
-if(!j.ok) throw new Error(j.error||'unknown');
-return j;
+throw new Error('ใส่รหัสไม่ถูกต้องหลายครั้ง กรุณาโหลดหน้าใหม่');
 }
+
+async function apiLoad(){ return (await apiPost({action:'loadState'})).state; }
+async function apiSave(desc){ return await apiPost({action:'saveState',state:STATE,user:currentUser,description:desc}); }
 function tickBtn(key,i,val){
 const b=el('button','tick-btn'); b.type='button'; b.dataset.ck=key+'|b'+i; b.dataset.val=val||'na';
 const paint=()=>{ const v=TICK_VIEW[b.dataset.val]||TICK_VIEW.na; b.textContent=v[0]; b.className='tick-btn tick '+v[1]; };
